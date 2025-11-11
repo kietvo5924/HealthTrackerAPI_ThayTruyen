@@ -115,6 +115,34 @@ public class AuthenticationService {
         userRepository.save(user);
     }
 
+    @Transactional
+    public UserResponseDTO updateMyProfile(UpdateProfileRequest request) {
+        User currentUser = getCurrentAuthenticatedUser();
+
+        if (request.getFullName() != null) {
+            currentUser.setFullName(request.getFullName());
+        }
+        if (request.getPhoneNumber() != null) {
+            currentUser.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getDateOfBirth() != null) {
+            currentUser.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getAddress() != null) {
+            currentUser.setAddress(request.getAddress());
+        }
+        if (request.getMedicalHistory() != null) {
+            currentUser.setMedicalHistory(request.getMedicalHistory());
+        }
+        if (request.getAllergies() != null) {
+            currentUser.setAllergies(request.getAllergies());
+        }
+
+        User updatedUser = userRepository.save(currentUser);
+
+        return UserResponseDTO.fromUser(updatedUser);
+    }
+
     public User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)

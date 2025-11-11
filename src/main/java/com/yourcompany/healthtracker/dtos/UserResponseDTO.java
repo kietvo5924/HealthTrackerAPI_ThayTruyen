@@ -61,6 +61,11 @@ public class UserResponseDTO {
                 .locked(user.isLocked())
                 .createdAt(user.getCreatedAt());
 
+        builder.dateOfBirth(user.getDateOfBirth());
+        builder.address(user.getAddress());
+        builder.medicalHistory(user.getMedicalHistory());
+        builder.allergies(user.getAllergies());
+
         return builder.build();
     }
 }

@@ -53,6 +53,18 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "address", length = 255)
+    private String address;
+
+    @Column(name = "medical_history", columnDefinition = "TEXT")
+    private String medicalHistory;
+
+    @Column(name = "allergies", columnDefinition = "TEXT")
+    private String allergies;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();

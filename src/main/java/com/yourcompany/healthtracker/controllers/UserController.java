@@ -1,6 +1,7 @@
 package com.yourcompany.healthtracker.controllers;
 
 import com.yourcompany.healthtracker.dtos.ChangePasswordRequest;
+import com.yourcompany.healthtracker.dtos.UpdateProfileRequest;
 import com.yourcompany.healthtracker.dtos.UserResponseDTO;
 import com.yourcompany.healthtracker.services.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,6 +32,18 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> getMyProfile() {
         UserResponseDTO userProfile = authenticationService.getMyProfile();
         return ResponseEntity.ok(userProfile);
+    }
+
+    @Operation(summary = "Cập nhật thông tin cá nhân", description = "Cập nhật thông tin chi tiết của người dùng đang đăng nhập.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cập nhật thành công, trả về thông tin mới"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
+    })
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDTO> updateMyProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        UserResponseDTO updatedUser = authenticationService.updateMyProfile(request);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @Operation(summary = "Đổi mật khẩu", description = "Người dùng tự đổi mật khẩu của chính mình.")
