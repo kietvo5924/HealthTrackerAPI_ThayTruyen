@@ -143,6 +143,13 @@ public class AuthenticationService {
         return UserResponseDTO.fromUser(updatedUser);
     }
 
+    @Transactional
+    public void saveFcmToken(String fcmToken) {
+        User currentUser = getCurrentAuthenticatedUser();
+        currentUser.setFcmToken(fcmToken);
+        userRepository.save(currentUser);
+    }
+
     public User getCurrentAuthenticatedUser() {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)

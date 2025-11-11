@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -59,6 +61,28 @@ public class UserController {
             return ResponseEntity.ok("Đổi mật khẩu thành công.");
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @Operation(summary = "Lưu/Cập nhật FCM Token",
+            description = "Gửi FCM token của thiết bị lên server để nhận thông báo.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lưu token thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
+    })
+    @PostMapping("/me/fcm-token")
+    public ResponseEntity<String> saveFcmToken(@RequestBody Map<String, String> payload) {
+        String token = payload.get("token");
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.badRequest().body("Token không được rỗng.");
+        }
+
+        try {
+            authenticationService.saveFcmToken(token);
+            return ResponseEntity.ok("Token đã được lưu.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
     }
 }

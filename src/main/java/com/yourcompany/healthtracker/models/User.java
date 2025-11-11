@@ -65,6 +65,9 @@ public class User implements UserDetails {
     @Column(name = "allergies", columnDefinition = "TEXT")
     private String allergies;
 
+    @Column(name = "fcm_token", columnDefinition = "TEXT")
+    private String fcmToken;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
