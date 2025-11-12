@@ -1,6 +1,7 @@
 package com.yourcompany.healthtracker.controllers;
 
 import com.yourcompany.healthtracker.dtos.AddMealItemRequestDTO;
+import com.yourcompany.healthtracker.dtos.FoodCreateRequestDTO;
 import com.yourcompany.healthtracker.dtos.FoodResponseDTO;
 import com.yourcompany.healthtracker.dtos.MealResponseDTO;
 import com.yourcompany.healthtracker.services.NutritionService;
@@ -33,6 +34,17 @@ public class NutritionController {
     ) {
         List<FoodResponseDTO> foods = nutritionService.searchFood(query);
         return ResponseEntity.ok(foods);
+    }
+
+    @Operation(summary = "Tạo một món ăn (Food) mới",
+            description = "Cho phép người dùng thêm món ăn của riêng họ vào CSDL.")
+    @PostMapping("/food")
+    public ResponseEntity<FoodResponseDTO> createFood(
+            @Valid @RequestBody FoodCreateRequestDTO request
+    ) {
+        FoodResponseDTO newFood = nutritionService.createFood(request);
+        // Trả về 201 Created (thay vì 200 OK)
+        return ResponseEntity.status(201).body(newFood);
     }
 
     @Operation(summary = "Lấy các bữa ăn theo ngày",

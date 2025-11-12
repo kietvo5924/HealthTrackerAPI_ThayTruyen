@@ -1,6 +1,7 @@
 package com.yourcompany.healthtracker.services;
 
 import com.yourcompany.healthtracker.dtos.AddMealItemRequestDTO;
+import com.yourcompany.healthtracker.dtos.FoodCreateRequestDTO;
 import com.yourcompany.healthtracker.dtos.FoodResponseDTO;
 import com.yourcompany.healthtracker.dtos.MealResponseDTO;
 import com.yourcompany.healthtracker.models.*;
@@ -105,5 +106,27 @@ public class NutritionService {
 
         // 3. Xóa
         mealItemRepository.delete(mealItem);
+    }
+
+    /**
+     * Tạo một món ăn (Food) mới, do người dùng định nghĩa
+     */
+    @Transactional
+    public FoodResponseDTO createFood(FoodCreateRequestDTO request) {
+        User currentUser = authenticationService.getCurrentAuthenticatedUser();
+
+        Food newFood = Food.builder()
+                .name(request.getName())
+                .unit(request.getUnit())
+                .calories(request.getCalories())
+                .proteinGrams(request.getProteinGrams())
+                .carbsGrams(request.getCarbsGrams())
+                .fatGrams(request.getFatGrams())
+                .addedByUser(currentUser) // Đánh dấu món ăn này là của user
+                .build();
+
+        Food savedFood = foodRepository.save(newFood);
+
+        return FoodResponseDTO.fromEntity(savedFood);
     }
 }
