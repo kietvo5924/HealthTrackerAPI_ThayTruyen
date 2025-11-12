@@ -29,10 +29,12 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Cho phép truy cập công khai
-                        .requestMatchers("/api/auth/**", "/api/auth/verify**", "/api/public/**", "/api/doctors/available", "/api/payments/callback").permitAll()
+                        .requestMatchers("/api/auth/**", "/api/auth/verify**", "/api/public/**").permitAll()
 
                         // Yêu cầu quyền ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/workouts/**").authenticated()
 
                         // Yêu cầu quyền DOCTOR
                         .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
