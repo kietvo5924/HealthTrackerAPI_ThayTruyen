@@ -46,4 +46,12 @@ public class WorkoutController {
         List<WorkoutResponseDTO> feed = workoutService.getCommunityFeed();
         return ResponseEntity.ok(feed);
     }
+
+    @Operation(summary = "Thích hoặc bỏ thích một bài tập",
+            description = "Toggle trạng thái 'like' của user hiện tại trên một bài tập.")
+    @PostMapping("/{id}/like")
+    public ResponseEntity<WorkoutResponseDTO> toggleLike(@PathVariable Long id) {
+        WorkoutResponseDTO updatedWorkout = workoutService.toggleLike(id);
+        return ResponseEntity.ok(updatedWorkout);
+    }
 }

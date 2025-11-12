@@ -41,4 +41,7 @@ public class Workout {
 
     @Column(name = "route_polyline", columnDefinition = "TEXT")
     private String routePolyline; // Chuỗi toạ độ (nếu có)
+
+    @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private java.util.List<WorkoutLike> likes = new java.util.ArrayList<>();
 }

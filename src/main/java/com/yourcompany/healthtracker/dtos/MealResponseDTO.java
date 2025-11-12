@@ -19,9 +19,13 @@ public class MealResponseDTO {
         dto.setMealType(meal.getMealType());
 
         // Chuyển đổi List<MealItem> thành List<MealItemResponseDTO>
-        dto.setItems(meal.getItems().stream()
-                .map(MealItemResponseDTO::fromEntity)
-                .collect(Collectors.toList()));
+        if (meal.getItems() != null) {
+            dto.setItems(meal.getItems().stream()
+                    .map(MealItemResponseDTO::fromEntity)
+                    .collect(Collectors.toList()));
+        } else {
+            dto.setItems(new java.util.ArrayList<>()); // Trả về một danh sách rỗng
+        }
 
         // Tính tổng calo cho bữa ăn
         dto.setTotalMealCalories(dto.getItems().stream()

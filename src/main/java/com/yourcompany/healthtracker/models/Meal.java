@@ -37,5 +37,5 @@ public class Meal {
 
     // Một bữa ăn (Meal) có nhiều Món (MealItem)
     @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MealItem> items;
+    private List<MealItem> items = new java.util.ArrayList<>();
 }

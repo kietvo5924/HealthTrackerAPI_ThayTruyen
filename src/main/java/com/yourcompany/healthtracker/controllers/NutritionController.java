@@ -30,7 +30,7 @@ public class NutritionController {
             description = "Tìm kiếm thư viện thực phẩm theo tên. Ví dụ: /api/nutrition/food?query=chuối")
     @GetMapping("/food")
     public ResponseEntity<List<FoodResponseDTO>> searchFood(
-            @RequestParam String query
+            @RequestParam(required = false, defaultValue = "") String query
     ) {
         List<FoodResponseDTO> foods = nutritionService.searchFood(query);
         return ResponseEntity.ok(foods);

@@ -30,8 +30,16 @@ public class NutritionService {
      * Tìm kiếm thực phẩm trong CSDL
      */
     public List<FoodResponseDTO> searchFood(String query) {
-        return foodRepository.findByNameContainingIgnoreCase(query)
-                .stream()
+        List<Food> foods;
+        if (query.isEmpty()) {
+            // Nếu query rỗng, lấy tất cả món ăn
+            foods = foodRepository.findAll();
+        } else {
+            // Nếu có query, tìm theo tên
+            foods = foodRepository.findByNameContainingIgnoreCase(query);
+        }
+
+        return foods.stream()
                 .map(FoodResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
