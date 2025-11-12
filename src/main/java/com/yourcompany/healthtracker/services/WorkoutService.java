@@ -46,5 +46,11 @@ public class WorkoutService {
                 .collect(Collectors.toList());
     }
 
-    // (Bạn có thể thêm hàm deleteWorkout(Long workoutId) ở đây)
+    public List<WorkoutResponseDTO> getCommunityFeed() {
+        // Lấy 20 bài tập mới nhất
+        return workoutRepository.findTop20ByOrderByStartedAtDesc()
+                .stream()
+                .map(WorkoutResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
 }

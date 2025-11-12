@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/api/workouts/**").authenticated()
+                        .requestMatchers("/api/nutrition/**").authenticated()
 
                         // Yêu cầu quyền DOCTOR
                         .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
