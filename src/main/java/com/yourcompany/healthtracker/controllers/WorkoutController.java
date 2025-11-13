@@ -1,5 +1,7 @@
 package com.yourcompany.healthtracker.controllers;
 
+import com.yourcompany.healthtracker.dtos.AddCommentRequestDTO;
+import com.yourcompany.healthtracker.dtos.WorkoutCommentDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutRequestDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutResponseDTO;
 import com.yourcompany.healthtracker.services.WorkoutService;
@@ -8,6 +10,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,5 +56,26 @@ public class WorkoutController {
     public ResponseEntity<WorkoutResponseDTO> toggleLike(@PathVariable Long id) {
         WorkoutResponseDTO updatedWorkout = workoutService.toggleLike(id);
         return ResponseEntity.ok(updatedWorkout);
+    }
+
+    @Operation(summary = "Lấy danh sách bình luận của bài tập",
+            description = "Lấy tất cả bình luận cho một bài tập theo ID")
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<WorkoutCommentDTO>> getComments(@PathVariable Long id) {
+        List<WorkoutCommentDTO> comments = workoutService.getCommentsForWorkout(id);
+        return ResponseEntity.ok(comments);
+    }
+
+    @Operation(summary = "Thêm bình luận mới vào bài tập",
+            description = "Thêm một bình luận (dưới dạng text) vào bài tập")
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<WorkoutCommentDTO> addComment(
+            @PathVariable Long id,
+            @RequestBody AddCommentRequestDTO request
+    ) {
+        // (Trong thực tế, bạn nên tạo một DTO Request
+        // thay vì dùng String, nhưng dùng String cho nhanh)
+        WorkoutCommentDTO newComment = workoutService.addCommentToWorkout(id, request.getText());
+        return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 }

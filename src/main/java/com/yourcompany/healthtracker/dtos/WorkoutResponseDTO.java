@@ -26,17 +26,24 @@ public class WorkoutResponseDTO {
     private long likeCount;
     @Schema(description = "Cho biết user hiện tại đã thích bài này hay chưa", example = "true")
     private boolean likedByCurrentUser;
+    @Schema(description = "Tổng số bình luận", example = "5")
+    private long commentCount;
 
     // Hàm chuyển đổi từ Entity (Model) sang DTO
     public static WorkoutResponseDTO fromEntity(Workout workout, Long currentUserId) {
         long count = 0;
         boolean liked = false;
+        long commentCount = 0;
 
         // Kiểm tra null an toàn (vì đã khởi tạo = new ArrayList ở Entity)
         if (workout.getLikes() != null) {
             count = workout.getLikes().size();
             liked = workout.getLikes().stream()
                     .anyMatch(like -> like.getUser() != null && like.getUser().getId().equals(currentUserId));
+        }
+
+        if (workout.getComments() != null) {
+            commentCount = workout.getComments().size();
         }
 
         return WorkoutResponseDTO.builder()
@@ -50,6 +57,7 @@ public class WorkoutResponseDTO {
                 .userFullName(workout.getUser().getFullName())
                 .likeCount(count)
                 .likedByCurrentUser(liked)
+                .commentCount(commentCount)
                 .build();
     }
 }

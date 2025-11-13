@@ -1,10 +1,13 @@
 package com.yourcompany.healthtracker.services;
 
+import com.yourcompany.healthtracker.dtos.WorkoutCommentDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutRequestDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutResponseDTO;
 import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.Workout;
+import com.yourcompany.healthtracker.models.WorkoutComment;
 import com.yourcompany.healthtracker.models.WorkoutLike;
+import com.yourcompany.healthtracker.repositories.WorkoutCommentRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutLikeRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class WorkoutService {
     private final AuthenticationService authenticationService; // Để lấy user
     private final WorkoutLikeRepository workoutLikeRepository;
     private final FirebaseMessagingService firebaseMessagingService;
+    private final WorkoutCommentRepository workoutCommentRepository;
 
     @Transactional
     public WorkoutResponseDTO logWorkout(WorkoutRequestDTO request) {
@@ -103,5 +107,47 @@ public class WorkoutService {
 
         // Trả về DTO đã cập nhật
         return WorkoutResponseDTO.fromEntity(updatedWorkout, currentUser.getId());
+    }
+
+    public List<WorkoutCommentDTO> getCommentsForWorkout(Long workoutId) {
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài tập"));
+
+        return workoutCommentRepository.findByWorkoutOrderByCreatedAtAsc(workout)
+                .stream()
+                .map(WorkoutCommentDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public WorkoutCommentDTO addCommentToWorkout(Long workoutId, String text) {
+        User currentUser = authenticationService.getCurrentAuthenticatedUser();
+        Workout workout = workoutRepository.findById(workoutId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài tập"));
+
+        WorkoutComment comment = WorkoutComment.builder()
+                .text(text)
+                .user(currentUser)
+                .workout(workout)
+                .build();
+
+        // Thêm comment vào list của workout
+        workout.getComments().add(comment);
+        // Lưu comment (hoặc lưu workout, tùy vào cascade)
+        WorkoutComment savedComment = workoutCommentRepository.save(comment);
+
+        // (TÙY CHỌN: Gửi Noti cho chủ bài viết)
+        User recipient = workout.getUser();
+        if (recipient != null && recipient.getFcmToken() != null &&
+                !recipient.getId().equals(currentUser.getId())) {
+
+            firebaseMessagingService.sendNotification(
+                    recipient.getFcmToken(),
+                    "Bài tập có bình luận mới!",
+                    currentUser.getFullName() + " đã bình luận bài tập của bạn: " + text
+            );
+        }
+
+        return WorkoutCommentDTO.fromEntity(savedComment);
     }
 }

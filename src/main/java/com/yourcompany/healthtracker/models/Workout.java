@@ -44,4 +44,7 @@ public class Workout {
 
     @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private java.util.List<WorkoutLike> likes = new java.util.ArrayList<>();
+
+    @OneToMany(mappedBy = "workout", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private java.util.List<WorkoutComment> comments = new java.util.ArrayList<>();
 }
