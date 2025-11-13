@@ -1,8 +1,7 @@
 package com.yourcompany.healthtracker.controllers;
 
-import com.yourcompany.healthtracker.dtos.ChangePasswordRequest;
-import com.yourcompany.healthtracker.dtos.UpdateProfileRequest;
-import com.yourcompany.healthtracker.dtos.UserResponseDTO;
+import com.yourcompany.healthtracker.dtos.*;
+import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.services.AuthenticationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -84,6 +84,35 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }
+    }
+
+    @Operation(summary = "Cập nhật cài đặt thông báo",
+            description = "Bật/tắt các nhắc nhở cho người dùng đang đăng nhập.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
+    })
+    @PutMapping("/me/notification-settings")
+    public ResponseEntity<UserResponseDTO> updateNotificationSettings(
+            @Valid @RequestBody NotificationSettingsDTO settingsDTO) {
+
+        UserResponseDTO updatedUser = authenticationService.updateNotificationSettings(settingsDTO);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @Operation(summary = "Cập nhật mục tiêu cá nhân",
+            description = "Cập nhật các mục tiêu sức khỏe (bước, nước, ngủ, calo...)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cập nhật thành công"),
+            @ApiResponse(responseCode = "400", description = "Dữ liệu không hợp lệ"),
+            @ApiResponse(responseCode = "403", description = "Không có quyền truy cập")
+    })
+    @PutMapping("/me/goals")
+    public ResponseEntity<UserResponseDTO> updateUserGoals(
+            @Valid @RequestBody UserGoalsDTO goalsDTO) {
+
+        UserResponseDTO updatedUser = authenticationService.updateUserGoals(goalsDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 }
 

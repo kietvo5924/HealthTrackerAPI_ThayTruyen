@@ -2,6 +2,7 @@ package com.yourcompany.healthtracker.dtos;
 
 import com.yourcompany.healthtracker.models.Role;
 import com.yourcompany.healthtracker.models.User;
+import com.yourcompany.healthtracker.models.UserGoals;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -50,6 +51,27 @@ public class UserResponseDTO {
     @Schema(description = "Dị ứng", example = "Dị ứng với phấn hoa")
     private String allergies;
 
+    @Schema(description = "Bật nhắc nhở uống nước", example = "true")
+    private boolean remindWater;
+
+    @Schema(description = "Bật nhắc nhở đi ngủ", example = "true")
+    private boolean remindSleep;
+
+    @Schema(description = "Mục tiêu bước đi", example = "10000")
+    private Integer goalSteps;
+
+    @Schema(description = "Mục tiêu nước (lít)", example = "2.5")
+    private Double goalWater;
+
+    @Schema(description = "Mục tiêu ngủ (giờ)", example = "8.0")
+    private Double goalSleep;
+
+    @Schema(description = "Mục tiêu calo vận động", example = "500")
+    private Integer goalCaloriesBurnt;
+
+    @Schema(description = "Mục tiêu calo nạp vào", example = "2000")
+    private Integer goalCaloriesConsumed;
+
     public static UserResponseDTO fromUser(User user) {
         UserResponseDTOBuilder builder = UserResponseDTO.builder()
                 .id(user.getId())
@@ -65,6 +87,16 @@ public class UserResponseDTO {
         builder.address(user.getAddress());
         builder.medicalHistory(user.getMedicalHistory());
         builder.allergies(user.getAllergies());
+        builder.remindWater(user.isRemindWater());
+        builder.remindSleep(user.isRemindSleep());
+
+        UserGoals goals = user.getUserGoals();
+
+        builder.goalSteps(goals != null ? goals.getGoalSteps() : 10000);
+        builder.goalWater(goals != null ? goals.getGoalWater() : 2.5);
+        builder.goalSleep(goals != null ? goals.getGoalSleep() : 8.0);
+        builder.goalCaloriesBurnt(goals != null ? goals.getGoalCaloriesBurnt() : 500);
+        builder.goalCaloriesConsumed(goals != null ? goals.getGoalCaloriesConsumed() : 2000);
 
         return builder.build();
     }

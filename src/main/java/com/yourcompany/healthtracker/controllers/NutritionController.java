@@ -1,9 +1,6 @@
 package com.yourcompany.healthtracker.controllers;
 
-import com.yourcompany.healthtracker.dtos.AddMealItemRequestDTO;
-import com.yourcompany.healthtracker.dtos.FoodCreateRequestDTO;
-import com.yourcompany.healthtracker.dtos.FoodResponseDTO;
-import com.yourcompany.healthtracker.dtos.MealResponseDTO;
+import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.services.NutritionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -77,5 +74,16 @@ public class NutritionController {
     ) {
         nutritionService.deleteMealItem(itemId);
         return ResponseEntity.noContent().build(); // Trả về 204 No Content
+    }
+
+    @Operation(summary = "Lấy tóm tắt dinh dưỡng theo khoảng ngày",
+            description = "Trả về tổng P-C-F và Calo nạp vào cho mỗi ngày trong khoảng đã chọn.")
+    @GetMapping("/summary")
+    public ResponseEntity<List<NutritionSummaryDTO>> getNutritionSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        List<NutritionSummaryDTO> summary = nutritionService.getNutritionSummary(startDate, endDate);
+        return ResponseEntity.ok(summary);
     }
 }

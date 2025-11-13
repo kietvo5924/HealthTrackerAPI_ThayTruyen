@@ -68,6 +68,15 @@ public class User implements UserDetails {
     @Column(name = "fcm_token", columnDefinition = "TEXT")
     private String fcmToken;
 
+    @Column(name = "remind_water", columnDefinition = "boolean default true")
+    private boolean remindWater = true;
+
+    @Column(name = "remind_sleep", columnDefinition = "boolean default true")
+    private boolean remindSleep = true;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private UserGoals userGoals;
+
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();

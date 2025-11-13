@@ -1,9 +1,6 @@
 package com.yourcompany.healthtracker.services;
 
-import com.yourcompany.healthtracker.dtos.AddMealItemRequestDTO;
-import com.yourcompany.healthtracker.dtos.FoodCreateRequestDTO;
-import com.yourcompany.healthtracker.dtos.FoodResponseDTO;
-import com.yourcompany.healthtracker.dtos.MealResponseDTO;
+import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.models.*;
 import com.yourcompany.healthtracker.repositories.FoodRepository;
 import com.yourcompany.healthtracker.repositories.MealItemRepository;
@@ -136,5 +133,10 @@ public class NutritionService {
         Food savedFood = foodRepository.save(newFood);
 
         return FoodResponseDTO.fromEntity(savedFood);
+    }
+
+    public List<NutritionSummaryDTO> getNutritionSummary(LocalDate startDate, LocalDate endDate) {
+        User currentUser = authenticationService.getCurrentAuthenticatedUser();
+        return mealItemRepository.findNutritionSummaryByDateRange(currentUser, startDate, endDate);
     }
 }

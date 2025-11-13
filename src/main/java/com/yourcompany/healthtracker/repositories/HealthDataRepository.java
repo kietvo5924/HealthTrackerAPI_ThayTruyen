@@ -17,4 +17,6 @@ public interface HealthDataRepository extends JpaRepository<HealthData, Long> {
 
     // Tìm bản ghi theo user trong một khoảng thời gian (cho biểu đồ)
     List<HealthData> findByUserAndDateBetween(User user, LocalDate startDate, LocalDate endDate);
+
+    boolean existsByUserAndDateAndWaterIntakeGreaterThan(User user, LocalDate date, Double waterIntake);
 }

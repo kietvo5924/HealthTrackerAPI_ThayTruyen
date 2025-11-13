@@ -3,6 +3,8 @@ package com.yourcompany.healthtracker.services;
 import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.models.Role;
 import com.yourcompany.healthtracker.models.User;
+import com.yourcompany.healthtracker.models.UserGoals;
+import com.yourcompany.healthtracker.repositories.UserGoalsRepository;
 import com.yourcompany.healthtracker.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,6 +25,7 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final EmailService emailService;
+    private final UserGoalsRepository userGoalsRepository;
 
     @Transactional
     public String signup(SignUpRequest request) {
@@ -38,6 +41,11 @@ public class AuthenticationService {
                 .role(Role.USER)
                 .enabled(false)
                 .build();
+
+        UserGoals defaultGoals = UserGoals.builder()
+                .user(user)
+                .build();
+        user.setUserGoals(defaultGoals);
 
         User savedUser = userRepository.save(user);
 
@@ -144,6 +152,41 @@ public class AuthenticationService {
     }
 
     @Transactional
+    public UserResponseDTO updateUserGoals(UserGoalsDTO goalsDTO) {
+        User currentUser = getCurrentAuthenticatedUser();
+
+        // Lấy đối tượng UserGoals (nó phải tồn tại do đã tạo lúc signup)
+        UserGoals goals = currentUser.getUserGoals();
+
+        // Cẩn thận: Nếu vì lý do nào đó nó null, hãy tạo mới
+        if (goals == null) {
+            goals = UserGoals.builder().user(currentUser).build();
+            currentUser.setUserGoals(goals);
+        }
+
+        // Cập nhật các giá trị
+        if (goalsDTO.getGoalSteps() != null) {
+            goals.setGoalSteps(goalsDTO.getGoalSteps());
+        }
+        if (goalsDTO.getGoalWater() != null) {
+            goals.setGoalWater(goalsDTO.getGoalWater());
+        }
+        if (goalsDTO.getGoalSleep() != null) {
+            goals.setGoalSleep(goalsDTO.getGoalSleep());
+        }
+        if (goalsDTO.getGoalCaloriesBurnt() != null) {
+            goals.setGoalCaloriesBurnt(goalsDTO.getGoalCaloriesBurnt());
+        }
+        if (goalsDTO.getGoalCaloriesConsumed() != null) {
+            goals.setGoalCaloriesConsumed(goalsDTO.getGoalCaloriesConsumed());
+        }
+
+        userGoalsRepository.save(goals); // Chỉ cần save 'goals'
+
+        return UserResponseDTO.fromUser(currentUser);
+    }
+
+    @Transactional
     public void saveFcmToken(String fcmToken) {
         User currentUser = getCurrentAuthenticatedUser();
         currentUser.setFcmToken(fcmToken);
@@ -154,6 +197,16 @@ public class AuthenticationService {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng."));
+    }
+
+    @Transactional
+    public UserResponseDTO updateNotificationSettings(NotificationSettingsDTO settingsDTO) {
+        User currentUser = getCurrentAuthenticatedUser();
+        currentUser.setRemindWater(settingsDTO.isRemindWater());
+        currentUser.setRemindSleep(settingsDTO.isRemindSleep());
+
+        User updatedUser = userRepository.save(currentUser);
+        return UserResponseDTO.fromUser(updatedUser);
     }
 }
 

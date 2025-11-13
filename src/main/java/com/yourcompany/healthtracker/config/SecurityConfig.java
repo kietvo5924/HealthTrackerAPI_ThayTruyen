@@ -40,6 +40,8 @@ public class SecurityConfig {
                         // Yêu cầu quyền DOCTOR
                         .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
 
+                        .requestMatchers("/api/users/me", "/api/users/me/change-password", "/api/users/me/fcm-token", "/api/users/me/notification-settings", "/api/users/me/goals").authenticated()
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

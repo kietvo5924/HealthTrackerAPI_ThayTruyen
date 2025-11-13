@@ -3,6 +3,7 @@ package com.yourcompany.healthtracker.services;
 import com.yourcompany.healthtracker.dtos.WorkoutCommentDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutRequestDTO;
 import com.yourcompany.healthtracker.dtos.WorkoutResponseDTO;
+import com.yourcompany.healthtracker.dtos.WorkoutSummaryDTO;
 import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.Workout;
 import com.yourcompany.healthtracker.models.WorkoutComment;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -149,5 +151,11 @@ public class WorkoutService {
         }
 
         return WorkoutCommentDTO.fromEntity(savedComment);
+    }
+
+    @Transactional(readOnly = true)
+    public List<WorkoutSummaryDTO> getWorkoutSummary(LocalDate startDate, LocalDate endDate) {
+        User currentUser = authenticationService.getCurrentAuthenticatedUser();
+        return workoutRepository.findWorkoutSummaryByDateRange(currentUser, startDate, endDate);
     }
 }

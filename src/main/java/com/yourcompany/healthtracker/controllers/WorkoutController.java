@@ -1,19 +1,18 @@
 package com.yourcompany.healthtracker.controllers;
 
-import com.yourcompany.healthtracker.dtos.AddCommentRequestDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutCommentDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutRequestDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutResponseDTO;
+import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.services.WorkoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -77,5 +76,16 @@ public class WorkoutController {
         // thay vì dùng String, nhưng dùng String cho nhanh)
         WorkoutCommentDTO newComment = workoutService.addCommentToWorkout(id, request.getText());
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
+    }
+
+    @Operation(summary = "Lấy tóm tắt luyện tập theo khoảng ngày",
+            description = "Trả về tổng thời gian, calo, quãng đường luyện tập cho mỗi ngày.")
+    @GetMapping("/summary")
+    public ResponseEntity<List<WorkoutSummaryDTO>> getWorkoutSummary(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        List<WorkoutSummaryDTO> summary = workoutService.getWorkoutSummary(startDate, endDate);
+        return ResponseEntity.ok(summary);
     }
 }
