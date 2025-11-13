@@ -1,5 +1,6 @@
 package com.yourcompany.healthtracker.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class UserGoals {
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId // Đánh dấu đây là khóa ngoại và cũng là khóa chính
     @JoinColumn(name = "user_id")
+    @JsonIgnore
     private User user;
 
     @Column(name = "goal_steps", columnDefinition = "integer default 10000")
