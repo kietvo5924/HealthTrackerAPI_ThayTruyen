@@ -33,11 +33,17 @@ public class HealthData {
 
     private Double caloriesBurnt; // Calo đã đốt
 
+    @Builder.Default
+    @Column(name = "calories_from_steps", columnDefinition = "double precision default 0.0")
+    private Double caloriesFromSteps = 0.0; // Calo từ bước đi
+
+    @Builder.Default
+    @Column(name = "calories_from_workout", columnDefinition = "double precision default 0.0")
+    private Double caloriesFromWorkout = 0.0; // Calo từ workout (cộng dồn)
+
     private Double sleepHours; // Số giờ ngủ
 
     private Double waterIntake; // Lượng nước uống (lít)
 
     private Double weight; // Cân nặng (kg)
-
-    // Bạn có thể thêm các chỉ số khác như nhịp tim,...
 }

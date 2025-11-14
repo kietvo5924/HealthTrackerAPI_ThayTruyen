@@ -26,33 +26,41 @@ public class HealthDataService {
         User currentUser = authenticationService.getCurrentAuthenticatedUser();
         LocalDate date = (request.getDate() != null) ? request.getDate() : LocalDate.now();
 
-        // Tìm xem đã có bản ghi cho ngày hôm nay chưa
+        // Tìm hoặc tạo mới HealthData
         HealthData healthData = healthDataRepository.findByUserAndDate(currentUser, date)
-                .orElseGet(() -> HealthData.builder() // Nếu chưa có, tạo mới
+                .orElseGet(() -> HealthData.builder()
                         .user(currentUser)
                         .date(date)
                         .steps(0)
-                        .caloriesBurnt(0.0)
+                        .caloriesBurnt(0.0) // Tổng calo
+                        .caloriesFromSteps(0.0) // Calo bước đi
+                        .caloriesFromWorkout(0.0) // Calo workout
                         .sleepHours(0.0)
                         .waterIntake(0.0)
                         .build());
 
-        // Cập nhật các trường nếu chúng được cung cấp trong request
+        // === LOGIC MỚI ===
+
+        // 1. Xử lý Bước đi (GHI ĐÈ)
         if (request.getSteps() != null) {
             healthData.setSteps(request.getSteps());
+            healthData.setCaloriesFromSteps(request.getSteps() * 0.04);
         }
+
+        // 2. Xử lý Calo Workout (CỘNG DỒN)
+        // (Hàm này được WorkoutService gọi)
         if (request.getCaloriesBurnt() != null) {
-            // Lấy calo hiện tại (nếu là null thì coi như 0)
-            double currentCalories = (healthData.getCaloriesBurnt() != null)
-                    ? healthData.getCaloriesBurnt() : 0.0;
+            double currentWorkoutCals = (healthData.getCaloriesFromWorkout() != null)
+                    ? healthData.getCaloriesFromWorkout() : 0.0;
 
-            // Cộng dồn calo mới vào
-            double newTotalCalories = currentCalories + request.getCaloriesBurnt();
-            healthData.setCaloriesBurnt(newTotalCalories);
+            double newWorkoutCals = currentWorkoutCals + request.getCaloriesBurnt();
+            healthData.setCaloriesFromWorkout(newWorkoutCals);
 
-            log.info("Cập nhật calo: {} (cũ) + {} (mới) = {}",
-                    currentCalories, request.getCaloriesBurnt(), newTotalCalories);
+            log.info("Cập nhật calo WORKOUT: {} (cũ) + {} (mới) = {}",
+                    currentWorkoutCals, request.getCaloriesBurnt(), newWorkoutCals);
         }
+
+        // 3. Xử lý các trường khác (GHI ĐÈ)
         if (request.getSleepHours() != null) {
             healthData.setSleepHours(request.getSleepHours());
         }
@@ -62,6 +70,12 @@ public class HealthDataService {
         if (request.getWeight() != null) {
             healthData.setWeight(request.getWeight());
         }
+
+        // 4. Tính toán TỔNG calo
+        // (Lấy giá trị hiện tại, nếu null thì dùng 0.0)
+        double stepsCals = (healthData.getCaloriesFromSteps() != null) ? healthData.getCaloriesFromSteps() : 0.0;
+        double workoutCals = (healthData.getCaloriesFromWorkout() != null) ? healthData.getCaloriesFromWorkout() : 0.0;
+        healthData.setCaloriesBurnt(stepsCals + workoutCals);
 
         return healthDataRepository.save(healthData);
     }
