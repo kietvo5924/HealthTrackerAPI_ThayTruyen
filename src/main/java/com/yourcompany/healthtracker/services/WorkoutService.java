@@ -1,9 +1,6 @@
 package com.yourcompany.healthtracker.services;
 
-import com.yourcompany.healthtracker.dtos.WorkoutCommentDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutRequestDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutResponseDTO;
-import com.yourcompany.healthtracker.dtos.WorkoutSummaryDTO;
+import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.Workout;
 import com.yourcompany.healthtracker.models.WorkoutComment;
@@ -12,6 +9,7 @@ import com.yourcompany.healthtracker.repositories.WorkoutCommentRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutLikeRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class WorkoutService {
 
     private final WorkoutRepository workoutRepository;
@@ -29,6 +28,7 @@ public class WorkoutService {
     private final WorkoutLikeRepository workoutLikeRepository;
     private final FirebaseMessagingService firebaseMessagingService;
     private final WorkoutCommentRepository workoutCommentRepository;
+    private final HealthDataService healthDataService;
 
     @Transactional
     public WorkoutResponseDTO logWorkout(WorkoutRequestDTO request) {
@@ -45,6 +45,30 @@ public class WorkoutService {
                 .build();
 
         Workout savedWorkout = workoutRepository.save(workout);
+
+        // Tự động cộng dồn calo vào HealthData
+        if (savedWorkout.getCaloriesBurned() != null && savedWorkout.getCaloriesBurned() > 0) {
+            try {
+                // 1. Lấy ngày của bài tập
+                LocalDate workoutDate = savedWorkout.getStartedAt().toLocalDate();
+
+                // 2. Tạo request cho HealthData
+                HealthDataLogRequest healthRequest = new HealthDataLogRequest();
+                healthRequest.setDate(workoutDate);
+                healthRequest.setCaloriesBurnt(savedWorkout.getCaloriesBurned()); // Chỉ gửi calo
+
+                // 3. Gọi service để cộng dồn
+                healthDataService.logOrUpdateHealthData(healthRequest);
+
+                log.info("Đã tự động cộng dồn {} calo vào HealthData ngày {}",
+                        savedWorkout.getCaloriesBurned(), workoutDate);
+
+            } catch (Exception e) {
+                // Nếu có lỗi (ví dụ: ngày tương lai), chỉ ghi log, không làm hỏng cả giao dịch
+                log.error("Không thể cộng dồn calo từ workout: {}", e.getMessage());
+            }
+        }
+
         return WorkoutResponseDTO.fromEntity(savedWorkout, currentUser.getId());
     }
 
