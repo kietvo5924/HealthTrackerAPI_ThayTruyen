@@ -5,11 +5,15 @@ import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.Workout;
 import com.yourcompany.healthtracker.models.WorkoutComment;
 import com.yourcompany.healthtracker.models.WorkoutLike;
+import com.yourcompany.healthtracker.repositories.UserFollowRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutCommentRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutLikeRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +33,7 @@ public class WorkoutService {
     private final FirebaseMessagingService firebaseMessagingService;
     private final WorkoutCommentRepository workoutCommentRepository;
     private final HealthDataService healthDataService;
+    private final UserFollowRepository userFollowRepository;
 
     @Transactional
     public WorkoutResponseDTO logWorkout(WorkoutRequestDTO request) {
@@ -82,12 +87,22 @@ public class WorkoutService {
                 .collect(Collectors.toList());
     }
 
-    public List<WorkoutResponseDTO> getCommunityFeed() {
+    public List<WorkoutResponseDTO> getCommunityFeed(int page, int size) {
         User currentUser = authenticationService.getCurrentAuthenticatedUser();
         final Long currentUserId = currentUser.getId();
 
-        // Lấy 20 bài tập mới nhất
-        return workoutRepository.findTop20ByOrderByStartedAtDesc()
+        // 1. Lấy danh sách người mình follow
+        List<Long> followingIds = userFollowRepository.findAllFollowingIds(currentUser);
+        followingIds.add(currentUserId); // Thêm mình vào
+
+        // 2. Tạo đối tượng phân trang
+        Pageable pageable = PageRequest.of(page, size);
+
+        // 3. Gọi Repository
+        Page<Workout> workoutPage = workoutRepository.findByUserIdInOrderByStartedAtDesc(followingIds, pageable);
+
+        // 4. Convert sang DTO
+        return workoutPage.getContent()
                 .stream()
                 .map(workout -> WorkoutResponseDTO.fromEntity(workout, currentUserId))
                 .collect(Collectors.toList());

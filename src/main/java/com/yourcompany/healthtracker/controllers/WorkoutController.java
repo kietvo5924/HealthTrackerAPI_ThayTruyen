@@ -41,12 +41,12 @@ public class WorkoutController {
         return ResponseEntity.ok(workouts);
     }
 
-    @Operation(summary = "Lấy bảng tin (feed) cộng đồng",
-            description = "Lấy danh sách 20 bài tập mới nhất từ tất cả người dùng.")
     @GetMapping("/feed")
-    public ResponseEntity<List<WorkoutResponseDTO>> getCommunityFeed() {
-        List<WorkoutResponseDTO> feed = workoutService.getCommunityFeed();
-        return ResponseEntity.ok(feed);
+    public ResponseEntity<List<WorkoutResponseDTO>> getCommunityFeed(
+            @RequestParam(defaultValue = "0") int page, // Trang số mấy (bắt đầu từ 0)
+            @RequestParam(defaultValue = "10") int size // Lấy bao nhiêu bài
+    ) {
+        return ResponseEntity.ok(workoutService.getCommunityFeed(page, size));
     }
 
     @Operation(summary = "Thích hoặc bỏ thích một bài tập",
