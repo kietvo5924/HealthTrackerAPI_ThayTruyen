@@ -1,37 +1,60 @@
 package com.yourcompany.healthtracker.services;
 
 import com.google.firebase.messaging.*;
+import com.yourcompany.healthtracker.models.Notification;
+import com.yourcompany.healthtracker.models.Notification.NotificationType;
+import com.yourcompany.healthtracker.models.User;
+import com.yourcompany.healthtracker.repositories.NotificationRepository;
+import com.yourcompany.healthtracker.repositories.UserRepository; // Cần để tìm user từ token nếu cần, hoặc truyền User vào hàm
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class FirebaseMessagingService {
 
-    // Gửi thông báo đến 1 token cụ thể
+    private final NotificationRepository notificationRepository;
+
     public void sendNotification(String token, String title, String body) {
-        if (token == null || token.isEmpty()) {
-            return; // Không có token thì bỏ qua
-        }
+        sendPushOnly(token, title, body);
+    }
 
+    // Gửi Push + Lưu DB
+    @Transactional
+    public void sendNotificationToUser(User user, String title, String body, NotificationType type) {
+        // 1. Lưu vào Database
         Notification notification = Notification.builder()
-                .setTitle(title)
-                .setBody(body)
+                .user(user)
+                .title(title)
+                .body(body)
+                .type(type)
                 .build();
+        notificationRepository.save(notification);
 
-        Message message = Message.builder()
-                .setToken(token) // FCM token của người nhận
-                .setNotification(notification)
-                // (Tùy chọn) Gửi thêm data (để xử lý trong app)
-                // .putData("click_action", "FLUTTER_NOTIFICATION_CLICK")
-                // .putData("workoutId", workoutId.toString())
-                .build();
+        // 2. Gửi Push qua Firebase (nếu user có token)
+        if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+            sendPushOnly(user.getFcmToken(), title, body);
+        }
+    }
 
+    private void sendPushOnly(String token, String title, String body) {
         try {
-            // Gửi tin nhắn
+            com.google.firebase.messaging.Notification notification = com.google.firebase.messaging.Notification.builder()
+                    .setTitle(title)
+                    .setBody(body)
+                    .build();
+
+            Message message = Message.builder()
+                    .setToken(token)
+                    .setNotification(notification)
+                    .build();
+
             FirebaseMessaging.getInstance().send(message);
         } catch (FirebaseMessagingException e) {
-            // Xử lý lỗi (ví dụ: token hết hạn)
-            e.printStackTrace();
-            System.err.println("Failed to send notification: " + e.getMessage());
+            log.error("Lỗi gửi FCM: {}", e.getMessage());
         }
     }
 }

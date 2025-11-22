@@ -2,7 +2,10 @@ package com.yourcompany.healthtracker.controllers;
 
 import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.models.User;
+import com.yourcompany.healthtracker.repositories.UserFollowRepository;
+import com.yourcompany.healthtracker.repositories.UserRepository;
 import com.yourcompany.healthtracker.services.AuthenticationService;
+import com.yourcompany.healthtracker.services.UserFollowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -14,7 +17,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,6 +29,9 @@ import java.util.Map;
 public class UserController {
 
     private final AuthenticationService authenticationService;
+    private final UserRepository userRepository;
+    private final UserFollowService userFollowService;
+    private final UserFollowRepository userFollowRepository;
 
     @Operation(summary = "Lấy thông tin cá nhân", description = "Lấy thông tin chi tiết của người dùng đang đăng nhập.")
     @ApiResponses(value = {
@@ -113,6 +121,31 @@ public class UserController {
 
         UserResponseDTO updatedUser = authenticationService.updateUserGoals(goalsDTO);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserResponseDTO>> searchUsers(@RequestParam String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+
+        User currentUser = authenticationService.getCurrentAuthenticatedUser();
+        List<User> users = userRepository.findByFullNameContainingIgnoreCase(query);
+
+        List<UserResponseDTO> dtos = users.stream()
+                .filter(u -> !u.getId().equals(currentUser.getId()))
+                .map(user -> {
+                    FollowStatsDTO stats = userFollowService.getFollowStats(user.getId());
+
+                    // 2. QUAN TRỌNG: Kiểm tra quan hệ follow trong Database
+                    boolean isFollowing = userFollowRepository.existsByFollowerAndFollowing(currentUser, user);
+
+                    // 3. Truyền kết quả (true/false) vào DTO
+                    return UserResponseDTO.fromUser(user, stats, isFollowing);
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
     }
 }
 

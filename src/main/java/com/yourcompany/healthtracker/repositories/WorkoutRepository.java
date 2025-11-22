@@ -19,8 +19,12 @@ public interface WorkoutRepository extends JpaRepository<Workout, Long> {
     // Lấy tất cả bài tập của 1 user, sắp xếp theo ngày mới nhất
     List<Workout> findByUserOrderByStartedAtDesc(User user);
 
+    // 1. Lấy Feed theo danh sách người follow (bao gồm bản thân)
     @Query("SELECT w FROM Workout w WHERE w.user.id IN :userIds ORDER BY w.startedAt DESC")
     Page<Workout> findByUserIdInOrderByStartedAtDesc(@Param("userIds") List<Long> userIds, Pageable pageable);
+
+    // 2. Lấy Feed toàn cầu (Global) - Dùng khi user chưa follow ai
+    Page<Workout> findAllByOrderByStartedAtDesc(Pageable pageable);
 
     @Query("SELECT new com.yourcompany.healthtracker.dtos.WorkoutSummaryDTO(" +
             "CAST(w.startedAt AS java.time.LocalDate), " +
@@ -35,4 +39,7 @@ public interface WorkoutRepository extends JpaRepository<Workout, Long> {
             @Param("user") User user,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    // Đếm tổng số bài tập của user
+    long countByUser(User user);
 }

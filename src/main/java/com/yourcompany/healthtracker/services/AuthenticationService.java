@@ -4,6 +4,7 @@ import com.yourcompany.healthtracker.dtos.*;
 import com.yourcompany.healthtracker.models.Role;
 import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.UserGoals;
+import com.yourcompany.healthtracker.repositories.UserFollowRepository;
 import com.yourcompany.healthtracker.repositories.UserGoalsRepository;
 import com.yourcompany.healthtracker.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final EmailService emailService;
     private final UserGoalsRepository userGoalsRepository;
+    private final UserFollowRepository userFollowRepository;
 
     @Transactional
     public String signup(SignUpRequest request) {
@@ -101,7 +103,8 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(currentUserEmail)
                 .orElseThrow(() -> new IllegalStateException("Không tìm thấy người dùng."));
 
-        return UserResponseDTO.fromUser(user);
+        FollowStatsDTO stats = getFollowStats(user);
+        return UserResponseDTO.fromUser(user, stats);
     }
 
     public void changePassword(ChangePasswordRequest request) {
@@ -148,7 +151,8 @@ public class AuthenticationService {
 
         User updatedUser = userRepository.save(currentUser);
 
-        return UserResponseDTO.fromUser(updatedUser);
+        FollowStatsDTO stats = getFollowStats(updatedUser);
+        return UserResponseDTO.fromUser(updatedUser, stats);
     }
 
     @Transactional
@@ -183,7 +187,8 @@ public class AuthenticationService {
 
         userGoalsRepository.save(goals); // Chỉ cần save 'goals'
 
-        return UserResponseDTO.fromUser(currentUser);
+        FollowStatsDTO stats = getFollowStats(currentUser);
+        return UserResponseDTO.fromUser(currentUser, stats);
     }
 
     @Transactional
@@ -206,7 +211,19 @@ public class AuthenticationService {
         currentUser.setRemindSleep(settingsDTO.isRemindSleep());
 
         User updatedUser = userRepository.save(currentUser);
-        return UserResponseDTO.fromUser(updatedUser);
+
+        FollowStatsDTO stats = getFollowStats(updatedUser);
+        return UserResponseDTO.fromUser(updatedUser, stats);
+    }
+
+    // Hàm phụ trợ để lấy thống kê follow
+    private FollowStatsDTO getFollowStats(User user) {
+        long followers = userFollowRepository.countByFollowing(user); // Người khác follow mình
+        long following = userFollowRepository.countByFollower(user);  // Mình follow người khác
+        return FollowStatsDTO.builder()
+                .followersCount(followers)
+                .followingCount(following)
+                .build();
     }
 }
 

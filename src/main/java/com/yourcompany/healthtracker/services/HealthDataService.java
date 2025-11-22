@@ -20,6 +20,7 @@ public class HealthDataService {
 
     private final HealthDataRepository healthDataRepository;
     private final AuthenticationService authenticationService; // Để lấy user đang đăng nhập
+    private final GamificationService gamificationService;
 
     @Transactional
     public HealthData logOrUpdateHealthData(HealthDataLogRequest request) {
@@ -45,6 +46,8 @@ public class HealthDataService {
         if (request.getSteps() != null) {
             healthData.setSteps(request.getSteps());
             healthData.setCaloriesFromSteps(request.getSteps() * 0.04);
+
+            gamificationService.checkStepAchievements(currentUser, request.getSteps());
         }
 
         // 2. Xử lý Calo Workout (CỘNG DỒN)

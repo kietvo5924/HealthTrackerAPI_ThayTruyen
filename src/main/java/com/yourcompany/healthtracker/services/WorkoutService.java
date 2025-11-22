@@ -1,10 +1,7 @@
 package com.yourcompany.healthtracker.services;
 
 import com.yourcompany.healthtracker.dtos.*;
-import com.yourcompany.healthtracker.models.User;
-import com.yourcompany.healthtracker.models.Workout;
-import com.yourcompany.healthtracker.models.WorkoutComment;
-import com.yourcompany.healthtracker.models.WorkoutLike;
+import com.yourcompany.healthtracker.models.*;
 import com.yourcompany.healthtracker.repositories.UserFollowRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutCommentRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutLikeRepository;
@@ -34,6 +31,7 @@ public class WorkoutService {
     private final WorkoutCommentRepository workoutCommentRepository;
     private final HealthDataService healthDataService;
     private final UserFollowRepository userFollowRepository;
+    private final GamificationService gamificationService;
 
     @Transactional
     public WorkoutResponseDTO logWorkout(WorkoutRequestDTO request) {
@@ -74,6 +72,20 @@ public class WorkoutService {
             }
         }
 
+        // Kiểm tra Thành tựu (Gamification)
+        try {
+            // A. Luôn kiểm tra số lượng bài tập
+            gamificationService.checkWorkoutCountAchievements(currentUser);
+
+            // B. Kiểm tra thành tựu Calo (SỬA LỖI Ở ĐÂY)
+            if (savedWorkout.getCaloriesBurned() != null && savedWorkout.getCaloriesBurned() > 0) {
+                // Thêm .intValue() để chuyển Double -> int
+                gamificationService.checkCalorieAchievements(currentUser, savedWorkout.getCaloriesBurned().intValue());
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi kiểm tra thành tựu: {}", e.getMessage());
+        }
+
         return WorkoutResponseDTO.fromEntity(savedWorkout, currentUser.getId());
     }
 
@@ -91,17 +103,22 @@ public class WorkoutService {
         User currentUser = authenticationService.getCurrentAuthenticatedUser();
         final Long currentUserId = currentUser.getId();
 
-        // 1. Lấy danh sách người mình follow
-        List<Long> followingIds = userFollowRepository.findAllFollowingIds(currentUser);
-        followingIds.add(currentUserId); // Thêm mình vào
-
-        // 2. Tạo đối tượng phân trang
         Pageable pageable = PageRequest.of(page, size);
+        Page<Workout> workoutPage;
 
-        // 3. Gọi Repository
-        Page<Workout> workoutPage = workoutRepository.findByUserIdInOrderByStartedAtDesc(followingIds, pageable);
+        // 1. Lấy danh sách những người mình đang follow
+        List<Long> followingIds = userFollowRepository.findAllFollowingIds(currentUser);
 
-        // 4. Convert sang DTO
+        if (followingIds.isEmpty()) {
+            // 2a. CASE 1: Nếu chưa follow ai -> Hiện Global Feed (Tất cả mọi người)
+            // Để người dùng mới không thấy màn hình trống trơn
+            workoutPage = workoutRepository.findAllByOrderByStartedAtDesc(pageable);
+        } else {
+            // 2b. CASE 2: Nếu đã follow -> Chỉ hiện bài của mình và người mình follow
+            followingIds.add(currentUserId); // Thêm bài của chính mình vào
+            workoutPage = workoutRepository.findByUserIdInOrderByStartedAtDesc(followingIds, pageable);
+        }
+
         return workoutPage.getContent()
                 .stream()
                 .map(workout -> WorkoutResponseDTO.fromEntity(workout, currentUserId))
@@ -131,19 +148,16 @@ public class WorkoutService {
 
             User recipient = workout.getUser(); // Người chủ bài tập
             // Đảm bảo có người nhận, có token và không tự like
-            if (recipient != null && recipient.getFcmToken() != null &&
-                    !recipient.getId().equals(currentUser.getId())) {
-
-                firebaseMessagingService.sendNotification(
-                        recipient.getFcmToken(),
-                        "Bài tập có lượt thích mới!", // Tiêu đề
-                        currentUser.getFullName() + " đã thích bài tập " + workout.getWorkoutType().toString().toLowerCase() + " của bạn." // Nội dung
+            if (recipient != null && !recipient.getId().equals(currentUser.getId())) {
+                firebaseMessagingService.sendNotificationToUser(
+                        recipient,
+                        "Bài tập có lượt thích mới!",
+                        currentUser.getFullName() + " đã thích bài tập của bạn.",
+                        Notification.NotificationType.SOCIAL
                 );
             }
         }
 
-        // Lưu lại workout để cập nhật (hoặc không cần nếu cascade hoạt động)
-        // Cứ lưu lại cho chắc
         Workout updatedWorkout = workoutRepository.save(workout);
 
         // Trả về DTO đã cập nhật
@@ -179,13 +193,13 @@ public class WorkoutService {
 
         // (TÙY CHỌN: Gửi Noti cho chủ bài viết)
         User recipient = workout.getUser();
-        if (recipient != null && recipient.getFcmToken() != null &&
-                !recipient.getId().equals(currentUser.getId())) {
+        if (recipient != null && !recipient.getId().equals(currentUser.getId())) {
 
-            firebaseMessagingService.sendNotification(
-                    recipient.getFcmToken(),
+            firebaseMessagingService.sendNotificationToUser(
+                    recipient,
                     "Bài tập có bình luận mới!",
-                    currentUser.getFullName() + " đã bình luận bài tập của bạn: " + text
+                    currentUser.getFullName() + " đã bình luận bài tập của bạn: ",
+                    Notification.NotificationType.SOCIAL
             );
         }
 

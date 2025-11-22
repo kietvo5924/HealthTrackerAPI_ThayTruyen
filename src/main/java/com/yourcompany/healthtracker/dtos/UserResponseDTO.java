@@ -1,5 +1,6 @@
 package com.yourcompany.healthtracker.dtos;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yourcompany.healthtracker.models.Role;
 import com.yourcompany.healthtracker.models.User;
 import com.yourcompany.healthtracker.models.UserGoals;
@@ -30,49 +31,60 @@ public class UserResponseDTO {
     @Schema(description = "Vai trò của người dùng trong hệ thống", example = "PATIENT")
     private Role role;
 
-    @Schema(description = "Trạng thái kích hoạt tài khoản (true = đã kích hoạt)", example = "true")
+    @Schema(description = "Trạng thái kích hoạt tài khoản", example = "true")
     private boolean enabled;
 
-    @Schema(description = "Trạng thái khóa tài khoản (true = đã bị khóa)", example = "false")
+    @Schema(description = "Trạng thái khóa tài khoản", example = "false")
     private boolean locked;
 
-    @Schema(description = "Thời điểm tài khoản được tạo", example = "2025-09-10T10:30:00+07:00")
+    @Schema(description = "Thời điểm tài khoản được tạo")
     private OffsetDateTime createdAt;
 
-    @Schema(description = "Ngày sinh", example = "2000-01-15")
+    @Schema(description = "Ngày sinh")
     private LocalDate dateOfBirth;
 
-    @Schema(description = "Địa chỉ", example = "123 Đường ABC, Quận 1, TP.HCM")
+    @Schema(description = "Địa chỉ")
     private String address;
 
-    @Schema(description = "Tiền sử bệnh án", example = "Từng bị viêm phổi lúc nhỏ")
+    @Schema(description = "Tiền sử bệnh án")
     private String medicalHistory;
 
-    @Schema(description = "Dị ứng", example = "Dị ứng với phấn hoa")
+    @Schema(description = "Dị ứng")
     private String allergies;
 
-    @Schema(description = "Bật nhắc nhở uống nước", example = "true")
+    @Schema(description = "Bật nhắc nhở uống nước")
     private boolean remindWater;
 
-    @Schema(description = "Bật nhắc nhở đi ngủ", example = "true")
+    @Schema(description = "Bật nhắc nhở đi ngủ")
     private boolean remindSleep;
 
-    @Schema(description = "Mục tiêu bước đi", example = "10000")
+    @Schema(description = "Mục tiêu bước đi")
     private Integer goalSteps;
 
-    @Schema(description = "Mục tiêu nước (lít)", example = "2.5")
+    @Schema(description = "Mục tiêu nước (lít)")
     private Double goalWater;
 
-    @Schema(description = "Mục tiêu ngủ (giờ)", example = "8.0")
+    @Schema(description = "Mục tiêu ngủ (giờ)")
     private Double goalSleep;
 
-    @Schema(description = "Mục tiêu calo vận động", example = "500")
+    @Schema(description = "Mục tiêu calo vận động")
     private Integer goalCaloriesBurnt;
 
-    @Schema(description = "Mục tiêu calo nạp vào", example = "2000")
+    @Schema(description = "Mục tiêu calo nạp vào")
     private Integer goalCaloriesConsumed;
 
-    public static UserResponseDTO fromUser(User user) {
+    @Schema(description = "Số lượng người theo dõi")
+    private long followersCount;
+
+    @Schema(description = "Số lượng đang theo dõi")
+    private long followingCount;
+
+    @Schema(description = "Trạng thái: Người xem API này đã theo dõi user này chưa?", example = "true")
+    @JsonProperty("isFollowing")
+    private boolean isFollowing;
+
+    // Cập nhật hàm này để nhận thêm tham số boolean isFollowing
+    public static UserResponseDTO fromUser(User user, FollowStatsDTO stats, boolean isFollowing) {
         UserResponseDTOBuilder builder = UserResponseDTO.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
@@ -81,23 +93,38 @@ public class UserResponseDTO {
                 .role(user.getRole())
                 .enabled(user.isEnabled())
                 .locked(user.isLocked())
-                .createdAt(user.getCreatedAt());
-
-        builder.dateOfBirth(user.getDateOfBirth());
-        builder.address(user.getAddress());
-        builder.medicalHistory(user.getMedicalHistory());
-        builder.allergies(user.getAllergies());
-        builder.remindWater(user.isRemindWater());
-        builder.remindSleep(user.isRemindSleep());
+                .createdAt(user.getCreatedAt())
+                .dateOfBirth(user.getDateOfBirth())
+                .address(user.getAddress())
+                .medicalHistory(user.getMedicalHistory())
+                .allergies(user.getAllergies())
+                .remindWater(user.isRemindWater())
+                .remindSleep(user.isRemindSleep());
 
         UserGoals goals = user.getUserGoals();
-
         builder.goalSteps(goals != null ? goals.getGoalSteps() : 10000);
         builder.goalWater(goals != null ? goals.getGoalWater() : 2.5);
         builder.goalSleep(goals != null ? goals.getGoalSleep() : 8.0);
         builder.goalCaloriesBurnt(goals != null ? goals.getGoalCaloriesBurnt() : 500);
         builder.goalCaloriesConsumed(goals != null ? goals.getGoalCaloriesConsumed() : 2000);
 
+        // Map stats
+        builder.followersCount(stats != null ? stats.getFollowersCount() : 0);
+        builder.followingCount(stats != null ? stats.getFollowingCount() : 0);
+
+        // Map isFollowing
+        builder.isFollowing(isFollowing);
+
         return builder.build();
+    }
+
+    // Hàm overload để tương thích code cũ (mặc định false)
+    public static UserResponseDTO fromUser(User user, FollowStatsDTO stats) {
+        return fromUser(user, stats, false);
+    }
+
+    // Hàm overload cơ bản nhất
+    public static UserResponseDTO fromUser(User user) {
+        return fromUser(user, null, false);
     }
 }
