@@ -37,9 +37,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/workouts/**").authenticated()
                         .requestMatchers("/api/nutrition/**").authenticated()
 
-                        // Yêu cầu quyền DOCTOR
-                        .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
-
                         .requestMatchers("/api/users/me", "/api/users/me/change-password", "/api/users/me/fcm-token", "/api/users/me/notification-settings", "/api/users/me/goals").authenticated()
 
                         .anyRequest().authenticated()
@@ -59,8 +56,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Các trang yêu cầu quyền cụ thể
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/doctor/**").hasRole("DOCTOR")
-                        .requestMatchers("/patient/payments/**").authenticated() // THÊM DÒNG NÀY
 
                         // Các trang và tài nguyên công khai
                         .requestMatchers(
