@@ -46,4 +46,7 @@ public class HealthData {
     private Double waterIntake; // Lượng nước uống (lít)
 
     private Double weight; // Cân nặng (kg)
+
+    @Column(name = "daily_score")
+    private Integer dailyScore = 0;
 }

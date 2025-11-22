@@ -19,4 +19,6 @@ public interface HealthDataRepository extends JpaRepository<HealthData, Long> {
     List<HealthData> findByUserAndDateBetween(User user, LocalDate startDate, LocalDate endDate);
 
     boolean existsByUserAndDateAndWaterIntakeGreaterThan(User user, LocalDate date, Double waterIntake);
+
+    Optional<HealthData> findByUserIdAndDate(Long userId, LocalDate date);
 }

@@ -19,7 +19,7 @@ import java.util.Optional;
 public class HealthDataService {
 
     private final HealthDataRepository healthDataRepository;
-    private final AuthenticationService authenticationService; // Để lấy user đang đăng nhập
+    private final AuthenticationService authenticationService;
     private final GamificationService gamificationService;
 
     @Transactional
@@ -79,6 +79,8 @@ public class HealthDataService {
         double stepsCals = (healthData.getCaloriesFromSteps() != null) ? healthData.getCaloriesFromSteps() : 0.0;
         double workoutCals = (healthData.getCaloriesFromWorkout() != null) ? healthData.getCaloriesFromWorkout() : 0.0;
         healthData.setCaloriesBurnt(stepsCals + workoutCals);
+
+        gamificationService.calculateAndSetDailyScore(healthData, currentUser);
 
         return healthDataRepository.save(healthData);
     }

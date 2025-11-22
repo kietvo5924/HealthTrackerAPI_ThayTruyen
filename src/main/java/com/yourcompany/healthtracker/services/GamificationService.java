@@ -1,11 +1,9 @@
 package com.yourcompany.healthtracker.services;
 
-import com.yourcompany.healthtracker.models.Achievement;
-import com.yourcompany.healthtracker.models.Notification;
-import com.yourcompany.healthtracker.models.User;
-import com.yourcompany.healthtracker.models.UserAchievement;
+import com.yourcompany.healthtracker.models.*;
 import com.yourcompany.healthtracker.repositories.AchievementRepository;
 import com.yourcompany.healthtracker.repositories.UserAchievementRepository;
+import com.yourcompany.healthtracker.repositories.UserGoalsRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutRepository; // Inject thêm cái này
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +19,7 @@ public class GamificationService {
     private final UserAchievementRepository userAchievementRepository;
     private final WorkoutRepository workoutRepository; // Để đếm số bài tập
     private final FirebaseMessagingService firebaseMessagingService;
+    private final UserGoalsRepository userGoalsRepository;
 
     // 1. Kiểm tra Bước chân (Đã có)
     @Transactional
@@ -73,5 +72,42 @@ public class GamificationService {
 
     public List<UserAchievement> getMyAchievements(User user) {
         return userAchievementRepository.findByUser(user);
+    }
+
+    /**
+     * Tính toán và cập nhật điểm sức khỏe (0 - 100) cho bản ghi HealthData
+     */
+    public void calculateAndSetDailyScore(HealthData data, User user) {
+        // 1. Lấy mục tiêu của người dùng (Nếu chưa có thì lấy mặc định)
+        UserGoals goals = userGoalsRepository.findByUserId(user.getId())
+                .orElse(UserGoals.builder()
+                        .goalSteps(10000)
+                        .goalWater(2.0)
+                        .goalSleep(8.0)
+                        .build());
+
+        int score = 0;
+
+        // 2. Tính điểm Bước chân (Trọng số 40%)
+        // Nếu đi > mục tiêu thì vẫn chỉ được tối đa 40 điểm
+        double stepProgress = (double) data.getSteps() / goals.getGoalSteps();
+        if (stepProgress > 1.0) stepProgress = 1.0;
+        score += (int) (stepProgress * 40);
+
+        // 3. Tính điểm Nước (Trọng số 30%)
+        double waterProgress = data.getWaterIntake() / goals.getGoalWater();
+        if (waterProgress > 1.0) waterProgress = 1.0;
+        score += (int) (waterProgress * 30);
+
+        // 4. Tính điểm Ngủ (Trọng số 30%)
+        // Chỉ tính nếu đã có dữ liệu ngủ
+        if (data.getSleepHours() != null && data.getSleepHours() > 0) {
+            double sleepProgress = data.getSleepHours() / goals.getGoalSleep();
+            if (sleepProgress > 1.0) sleepProgress = 1.0;
+            score += (int) (sleepProgress * 30);
+        }
+
+        // 5. Cập nhật vào data
+        data.setDailyScore(score);
     }
 }
