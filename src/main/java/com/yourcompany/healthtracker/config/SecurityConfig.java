@@ -18,73 +18,76 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final ApplicationConfig applicationConfig;
-    private final JwtAuthenticationFilter jwtAuthFilter;
+        private final ApplicationConfig applicationConfig;
+        private final JwtAuthenticationFilter jwtAuthFilter;
 
-    @Bean
-    @Order(1)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher("/api/**")
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        // Cho phép truy cập công khai
-                        .requestMatchers("/api/auth/**", "/api/auth/verify**", "/api/public/**").permitAll()
+        @Bean
+        @Order(1)
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .securityMatcher("/api/**")
+                                .csrf(csrf -> csrf.disable())
+                                .authorizeHttpRequests(auth -> auth
+                                                // Cho phép truy cập công khai
+                                                .requestMatchers("/api/auth/**", "/api/auth/verify**", "/api/public/**")
+                                                .permitAll()
 
-                        // Yêu cầu quyền ADMIN
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                                                // Yêu cầu quyền ADMIN
+                                                .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        .requestMatchers("/api/workouts/**").authenticated()
-                        .requestMatchers("/api/nutrition/**").authenticated()
+                                                .requestMatchers("/api/workouts/**").authenticated()
+                                                .requestMatchers("/api/nutrition/**").authenticated()
 
-                        .requestMatchers("/api/users/me", "/api/users/me/change-password", "/api/users/me/fcm-token", "/api/users/me/notification-settings", "/api/users/me/goals").authenticated()
+                                                .requestMatchers("/api/users/me", "/api/users/me/change-password",
+                                                                "/api/users/me/fcm-token",
+                                                                "/api/users/me/notification-settings",
+                                                                "/api/users/me/goals")
+                                                .authenticated()
 
-                        .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(applicationConfig.authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                                                .anyRequest().authenticated())
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authenticationProvider(applicationConfig.authenticationProvider())
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return http.build();
-    }
+                return http.build();
+        }
 
-    // Cấu hình bảo mật cho Giao diện Web (dùng Session, Form Login)
-    @Bean
-    @Order(2)
-    public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(auth -> auth
-                        // Các trang yêu cầu quyền cụ thể
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+        // Cấu hình bảo mật cho Giao diện Web (dùng Session, Form Login)
+        @Bean
+        @Order(2)
+        public SecurityFilterChain formLoginFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .authorizeHttpRequests(auth -> auth
+                                                // Các trang yêu cầu quyền cụ thể
+                                                .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                        // Các trang và tài nguyên công khai
-                        .requestMatchers(
-                                "/login",
-                                "/signup",
-                                "/error",
-                                "/css/**",
-                                "/js/**",
-                                "/images/**",
-                                "/webjars/**",
-                                "/swagger.html",// Tài nguyên của webjar
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                                                // Các trang và tài nguyên công khai
+                                                .requestMatchers(
+                                                                "/login",
+                                                                "/signup",
+                                                                "/error",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/images/**",
+                                                                "/webjars/**",
+                                                                "/swagger.html", // Tài nguyên của webjar
+                                                                "/swagger-ui.html",
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/ws/**")
+                                                .permitAll()
 
-                        .anyRequest().authenticated()
-                )
-                .formLogin(form -> form
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/default", true)
-                        .permitAll()
-                )
-                .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout")
-                        .permitAll()
-                );
+                                                .anyRequest().authenticated())
+                                .formLogin(form -> form
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/default", true)
+                                                .permitAll())
+                                .logout(logout -> logout
+                                                .logoutUrl("/logout")
+                                                .logoutSuccessUrl("/login?logout")
+                                                .permitAll());
 
-        return http.build();
-    }
+                return http.build();
+        }
 }

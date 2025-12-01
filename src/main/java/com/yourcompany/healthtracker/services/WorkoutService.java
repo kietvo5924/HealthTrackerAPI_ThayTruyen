@@ -1,6 +1,7 @@
 package com.yourcompany.healthtracker.services;
 
 import com.yourcompany.healthtracker.dtos.*;
+import com.yourcompany.healthtracker.dtos.WorkoutRealtimeUpdateDTO;
 import com.yourcompany.healthtracker.models.*;
 import com.yourcompany.healthtracker.repositories.UserFollowRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutCommentRepository;
@@ -8,6 +9,7 @@ import com.yourcompany.healthtracker.repositories.WorkoutLikeRepository;
 import com.yourcompany.healthtracker.repositories.WorkoutRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +34,7 @@ public class WorkoutService {
     private final HealthDataService healthDataService;
     private final UserFollowRepository userFollowRepository;
     private final GamificationService gamificationService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Transactional
     public WorkoutResponseDTO logWorkout(WorkoutRequestDTO request) {
@@ -153,12 +156,12 @@ public class WorkoutService {
                         recipient,
                         "Bài tập có lượt thích mới!",
                         currentUser.getFullName() + " đã thích bài tập của bạn.",
-                        Notification.NotificationType.SOCIAL
-                );
+                        Notification.NotificationType.SOCIAL);
             }
         }
 
         Workout updatedWorkout = workoutRepository.save(workout);
+        publishRealtimeUpdate(updatedWorkout, "LIKE_UPDATED", currentUser);
 
         // Trả về DTO đã cập nhật
         return WorkoutResponseDTO.fromEntity(updatedWorkout, currentUser.getId());
@@ -199,11 +202,32 @@ public class WorkoutService {
                     recipient,
                     "Bài tập có bình luận mới!",
                     currentUser.getFullName() + " đã bình luận bài tập của bạn: ",
-                    Notification.NotificationType.SOCIAL
-            );
+                    Notification.NotificationType.SOCIAL);
         }
 
-        return WorkoutCommentDTO.fromEntity(savedComment);
+        WorkoutCommentDTO dto = WorkoutCommentDTO.fromEntity(savedComment);
+        publishRealtimeUpdate(workout, "COMMENT_ADDED", currentUser);
+        return dto;
+    }
+
+    private void publishRealtimeUpdate(Workout workout, String eventType, User actor) {
+        if (workout == null || workout.getId() == null) {
+            return;
+        }
+
+        long likeCount = workout.getLikes() != null ? workout.getLikes().size() : 0;
+        long commentCount = workout.getComments() != null ? workout.getComments().size() : 0;
+
+        WorkoutRealtimeUpdateDTO payload = WorkoutRealtimeUpdateDTO.builder()
+                .workoutId(workout.getId())
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .eventType(eventType)
+                .actorId(actor != null ? actor.getId() : null)
+                .actorName(actor != null ? actor.getFullName() : null)
+                .build();
+
+        messagingTemplate.convertAndSend("/topic/workouts", payload);
     }
 
     @Transactional(readOnly = true)
