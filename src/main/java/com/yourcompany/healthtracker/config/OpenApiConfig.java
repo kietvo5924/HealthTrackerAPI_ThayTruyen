@@ -9,12 +9,12 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 @OpenAPIDefinition(
         info = @Info(
-                title = "API Bệnh viện Nhi Đồng II",
+                title = "API theo dõi sức khỏe và thể chất",
                 version = "1.0.0",
-                description = "Tài liệu API cho hệ thống đặt lịch khám bệnh trực tuyến."
+                description = "Tài liệu API cho hệ thống theo dõi sức khỏe và thể chất."
         ),
         servers = {
-                @Server(url = "http://localhost:8080", description = "Local Development Server")
+                @Server(url = "https://healthtrackerapi-thaytruyen.onrender.com", description = "Local Development Server")
         }
 )
 @SecurityScheme(

@@ -53,7 +53,7 @@ public class AuthenticationService {
 
         String verificationToken = jwtService.generateEmailVerificationToken(savedUser.getUsername());
 
-        String verificationLink = "http://localhost:8080/api/auth/verify?token=" + verificationToken;
+        String verificationLink = "https://healthtrackerapi-thaytruyen.onrender.com/api/auth/verify?token=" + verificationToken;
         String emailBody = String.format("""
             <h1>Cảm ơn bạn đã đăng ký tài khoản tại Bệnh viện Nhi Đồng II!</h1>
             <p>Vui lòng nhấp vào link sau để xác thực tài khoản của bạn (link có hiệu lực trong 15 phút):</p>
